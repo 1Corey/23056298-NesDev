@@ -1,0 +1,13 @@
+# Object files
+*.o
+# NOTE we need the .o files in the NESHugg/neslib folder
+# See readme!!!
+
+# Tools Folders
+cc65/
+FamiStudio/
+FamiTracker/
+Mesen2/
+MesenX/
+NEXXT/
+NESHugg/*/BUILD/

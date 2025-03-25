@@ -1,0 +1,20 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "alchemy65",
+            "request": "launch",
+            "name": "Debug rom with mesen",
+            "romPath": "${workspaceFolder}/BUILD/climber_game.nes",
+            "dbgPath": "${workspaceFolder}/BUILD/climber_game.dbg",
+            //"program": "${workspaceFolder}/../MesenX/mesen.exe",
+            "program": "${workspaceFolder}/../Mesen2/mesen.exe",
+            "sourcePath": "${workspaceFolder}/",
+            "stopOnEntry": false,
+            "resetOnEntry": true
+        }
+    ]
+}

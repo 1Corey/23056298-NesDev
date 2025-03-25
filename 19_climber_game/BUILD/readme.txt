@@ -1,0 +1,1 @@
+This is where .nes (executable) .s (assembly) .dbg (debug) .labels (label info) and .map (Memory map) files will be stored locally
