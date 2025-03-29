@@ -943,7 +943,7 @@ L0002:	rts
 	lda     #$FF
 	jsr     _set_scroll_y
 ;
-; BoxGuy1.X = 120;
+; BoxGuy1.X = 120; //player spawns in the middle of the bottom of the screen
 ;
 	lda     #$78
 	sta     _BoxGuy1

@@ -11,7 +11,7 @@
             "romPath": "${workspaceFolder}/BUILD/collide.nes",
             "dbgPath": "${workspaceFolder}/BUILD/collide.dbg",
             //"program": "${workspaceFolder}/../../MesenX/mesen.exe",
-            "program": "${workspaceFolder}/../Mesen2/mesen.exe",
+            "program": "${workspaceFolder}/../../Mesen2/mesen.exe",
             "sourcePath": "${workspaceFolder}/",
             "stopOnEntry": false,
             "resetOnEntry": true
