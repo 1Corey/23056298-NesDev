@@ -1,109 +1,29 @@
-
-;settings, uncomment or put them into your main program; the latter makes possible updates easier
-
-; FT_BASE_ADR		= $0300		;page in the RAM used for FT2 variables, should be $xx00
-; FT_TEMP			= $00	;3 bytes in zeropage used by the library as a scratchpad
-; FT_DPCM_OFF		= $c000	;$c000..$ffc0, 64-byte steps
-; FT_SFX_STREAMS	= 4		;number of sound effects played at once, 1..4
-
-; FT_DPCM_ENABLE			;undefine to exclude all DMC code
-; FT_SFX_ENABLE				;undefine to exclude all sound effects code
-; FT_THREAD				;undefine if you are calling sound effects from the same thread as the sound update call
-
-; FT_PAL_SUPPORT			;undefine to exclude PAL support
-; FT_NTSC_SUPPORT			;undefine to exclude NTSC support
-
-	.import popa
-
-FT_BASE_ADR	=$0500		;page in RAM, should be $xx00
-FT_DPCM_OFF	=$c000		;sample data start address
-
-.define FT_THREAD       1	;undefine if you call sound effects in the same thread as sound update
-.define FT_PAL_SUPPORT	1  	;undefine to exclude PAL support
-.define FT_NTSC_SUPPORT	1  	;undefine to exclude NTSC support
-.define FT_SFX_ENABLE   1
-.define FT_DPCM_ENABLE  0
-.define FT_SFX_STREAMS  4
-
-.segment "ZEROPAGE"
-
-FT_TEMP: 		.res 3
-
-.segment "CODE"
-
-	.export _famitone_init,_famitone_update
-	.export _music_play,_music_stop,_music_pause
-.if(FT_SFX_ENABLE)
-	.export _sfx_init
-	.export _sfx_play
-.endif
-.if(FT_DPCM_ENABLE)
-        .export _sample_play
-.endif
-
-;void __fastcall__ famitone_init(void* music_data);
-
-_famitone_init=FamiToneInit
-
-
-
-;void __fastcall__ famitone_update(void);
-
-_famitone_update=FamiToneUpdate
-
-
-
-;void __fastcall__ music_play(unsigned char song);
-
-_music_play=FamiToneMusicPlay
-
-
-
-;void __fastcall__ music_stop(void);
-
-_music_stop=FamiToneMusicStop
-
-
-
-;void __fastcall__ music_pause(unsigned char pause);
-
-_music_pause=FamiToneMusicPause
-
-
-.if(FT_SFX_ENABLE)
-;void __fastcall__ sfx_init(void* sounds_data);
-_sfx_init=FamiToneSfxInit
-
-;void __fastcall__ sfx_play(unsigned char sound,unsigned char channel);
-_sfx_play:
-
-	and #$03
-	tax
-	lda @sfxPriority,x
-	tax
-	jsr popa
-	jmp FamiToneSfxPlay
-
-@sfxPriority:
-
-	.byte FT_SFX_CH0,FT_SFX_CH1,FT_SFX_CH2,FT_SFX_CH3
-.endif
-
-.if(FT_DPCM_ENABLE)
-;void __fastcall__ sample_play(unsigned char sample);
-_sample_play=FamiToneSamplePlay
-.endif
-
 ;FamiTone2 v1.12
 
 
 
+;settings, uncomment or put them into your main program; the latter makes possible updates easier
+
+; FT_BASE_ADR		= $0300	;page in the RAM used for FT2 variables, should be $xx00
+; FT_TEMP			= $fd	;3 bytes in zeropage used by the library as a scratchpad
+; FT_DPCM_OFF		= $fc00	;$c000..$ffc0, 64-byte steps
+; FT_SFX_STREAMS	= 1		;number of sound effects played at once, 1..4
+
+; FT_DPCM_ENABLE = 1		;undefine to exclude all DMC code
+; FT_SFX_ENABLE = 1		;undefine to exclude all sound effects code
+; FT_THREAD = 1			;undefine if you are calling sound effects from the same thread as the sound update call
+
+; FT_PAL_SUPPORT = 1		;undefine to exclude PAL support
+; FT_NTSC_SUPPORT = 1		;undefine to exclude NTSC support
+
+
+
 ;internal defines
-;FT_PITCH_FIX if either NTSC or PAL defined
-	.if(FT_PAL_SUPPORT && FT_NTSC_SUPPORT)
-FT_PITCH_FIX = 1
+
+	.if(FT_PAL_SUPPORT & FT_NTSC_SUPPORT)
+FT_PITCH_FIX = 1			;add PAL/NTSC pitch correction code only when both modes are enabled
 	.else
-FT_PITCH_FIX = 0
+FT_PITCH_FIX = 0	
 	.endif
 
 FT_DPCM_PTR		= (FT_DPCM_OFF&$3fff)>>6
@@ -111,11 +31,11 @@ FT_DPCM_PTR		= (FT_DPCM_OFF&$3fff)>>6
 
 ;zero page variables
 
-FT_TEMP_PTR		= FT_TEMP		;word
+FT_TEMP_PTR			= FT_TEMP		;word
 FT_TEMP_PTR_L		= FT_TEMP_PTR+0
 FT_TEMP_PTR_H		= FT_TEMP_PTR+1
 FT_TEMP_VAR1		= FT_TEMP+2
-
+FT_TEMP_SIZE        = 3
 
 ;envelope structure offsets, 5 bytes per envelope, grouped by variable type
 
@@ -126,7 +46,7 @@ FT_ENV_VALUE		= FT_BASE_ADR+0*FT_ENVELOPES_ALL
 FT_ENV_REPEAT		= FT_BASE_ADR+1*FT_ENVELOPES_ALL
 FT_ENV_ADR_L		= FT_BASE_ADR+2*FT_ENVELOPES_ALL
 FT_ENV_ADR_H		= FT_BASE_ADR+3*FT_ENVELOPES_ALL
-FT_ENV_PTR		= FT_BASE_ADR+4*FT_ENVELOPES_ALL
+FT_ENV_PTR			= FT_BASE_ADR+4*FT_ENVELOPES_ALL
 
 
 ;channel structure offsets, 7 bytes per channel
@@ -136,18 +56,18 @@ FT_CHN_STRUCT_SIZE	= 9
 
 FT_CHN_PTR_L		= FT_BASE_ADR+0*FT_CHANNELS_ALL
 FT_CHN_PTR_H		= FT_BASE_ADR+1*FT_CHANNELS_ALL
-FT_CHN_NOTE		= FT_BASE_ADR+2*FT_CHANNELS_ALL
+FT_CHN_NOTE			= FT_BASE_ADR+2*FT_CHANNELS_ALL
 FT_CHN_INSTRUMENT	= FT_BASE_ADR+3*FT_CHANNELS_ALL
 FT_CHN_REPEAT		= FT_BASE_ADR+4*FT_CHANNELS_ALL
 FT_CHN_RETURN_L		= FT_BASE_ADR+5*FT_CHANNELS_ALL
 FT_CHN_RETURN_H		= FT_BASE_ADR+6*FT_CHANNELS_ALL
 FT_CHN_REF_LEN		= FT_BASE_ADR+7*FT_CHANNELS_ALL
-FT_CHN_DUTY		= FT_BASE_ADR+8*FT_CHANNELS_ALL
+FT_CHN_DUTY			= FT_BASE_ADR+8*FT_CHANNELS_ALL
 
 
 ;variables and aliases
 
-FT_ENVELOPES		= FT_BASE_ADR
+FT_ENVELOPES	= FT_BASE_ADR
 FT_CH1_ENVS		= FT_ENVELOPES+0
 FT_CH2_ENVS		= FT_ENVELOPES+3
 FT_CH3_ENVS		= FT_ENVELOPES+6
@@ -161,11 +81,11 @@ FT_CH4_VARS		= FT_CHANNELS+3
 FT_CH5_VARS		= FT_CHANNELS+4
 
 
-FT_CH1_NOTE		= FT_CH1_VARS+.lobyte(FT_CHN_NOTE)
-FT_CH2_NOTE		= FT_CH2_VARS+.lobyte(FT_CHN_NOTE)
-FT_CH3_NOTE		= FT_CH3_VARS+.lobyte(FT_CHN_NOTE)
-FT_CH4_NOTE		= FT_CH4_VARS+.lobyte(FT_CHN_NOTE)
-FT_CH5_NOTE		= FT_CH5_VARS+.lobyte(FT_CHN_NOTE)
+FT_CH1_NOTE			= FT_CH1_VARS+.lobyte(FT_CHN_NOTE)
+FT_CH2_NOTE			= FT_CH2_VARS+.lobyte(FT_CHN_NOTE)
+FT_CH3_NOTE			= FT_CH3_VARS+.lobyte(FT_CHN_NOTE)
+FT_CH4_NOTE			= FT_CH4_VARS+.lobyte(FT_CHN_NOTE)
+FT_CH5_NOTE			= FT_CH5_VARS+.lobyte(FT_CHN_NOTE)
 
 FT_CH1_INSTRUMENT	= FT_CH1_VARS+.lobyte(FT_CHN_INSTRUMENT)
 FT_CH2_INSTRUMENT	= FT_CH2_VARS+.lobyte(FT_CHN_INSTRUMENT)
@@ -173,11 +93,11 @@ FT_CH3_INSTRUMENT	= FT_CH3_VARS+.lobyte(FT_CHN_INSTRUMENT)
 FT_CH4_INSTRUMENT	= FT_CH4_VARS+.lobyte(FT_CHN_INSTRUMENT)
 FT_CH5_INSTRUMENT	= FT_CH5_VARS+.lobyte(FT_CHN_INSTRUMENT)
 
-FT_CH1_DUTY		= FT_CH1_VARS+.lobyte(FT_CHN_DUTY)
-FT_CH2_DUTY		= FT_CH2_VARS+.lobyte(FT_CHN_DUTY)
-FT_CH3_DUTY		= FT_CH3_VARS+.lobyte(FT_CHN_DUTY)
-FT_CH4_DUTY		= FT_CH4_VARS+.lobyte(FT_CHN_DUTY)
-FT_CH5_DUTY		= FT_CH5_VARS+.lobyte(FT_CHN_DUTY)
+FT_CH1_DUTY			= FT_CH1_VARS+.lobyte(FT_CHN_DUTY)
+FT_CH2_DUTY			= FT_CH2_VARS+.lobyte(FT_CHN_DUTY)
+FT_CH3_DUTY			= FT_CH3_VARS+.lobyte(FT_CHN_DUTY)
+FT_CH4_DUTY			= FT_CH4_VARS+.lobyte(FT_CHN_DUTY)
+FT_CH5_DUTY			= FT_CH5_VARS+.lobyte(FT_CHN_DUTY)
 
 FT_CH1_VOLUME		= FT_CH1_ENVS+.lobyte(FT_ENV_VALUE)+0
 FT_CH2_VOLUME		= FT_CH2_ENVS+.lobyte(FT_ENV_VALUE)+0
@@ -211,7 +131,7 @@ FT_PULSE2_PREV	= FT_CH5_DUTY
 FT_DPCM_LIST_L	= FT_VARS+9
 FT_DPCM_LIST_H	= FT_VARS+10
 FT_DPCM_EFFECT  = FT_VARS+11
-FT_OUT_BUF	= FT_VARS+12	;11 bytes
+FT_OUT_BUF		= FT_VARS+12	;11 bytes
 
 
 ;sound effect stream variables, 2 bytes and 15 bytes per stream
@@ -225,37 +145,38 @@ FT_SFX_STRUCT_SIZE	= 15
 FT_SFX_REPEAT		= FT_SFX_BASE_ADR+0
 FT_SFX_PTR_L		= FT_SFX_BASE_ADR+1
 FT_SFX_PTR_H		= FT_SFX_BASE_ADR+2
-FT_SFX_OFF		= FT_SFX_BASE_ADR+3
-FT_SFX_BUF		= FT_SFX_BASE_ADR+4	;11 bytes
+FT_SFX_OFF			= FT_SFX_BASE_ADR+3
+FT_SFX_BUF			= FT_SFX_BASE_ADR+4	;11 bytes
 
+FT_BASE_SIZE 		= FT_SFX_BUF+11-FT_BASE_ADR
 
 ;aliases for sound effect channels to use in user calls
 
-FT_SFX_CH0		= FT_SFX_STRUCT_SIZE*0
-FT_SFX_CH1		= FT_SFX_STRUCT_SIZE*1
-FT_SFX_CH2		= FT_SFX_STRUCT_SIZE*2
-FT_SFX_CH3		= FT_SFX_STRUCT_SIZE*3
+FT_SFX_CH0			= FT_SFX_STRUCT_SIZE*0
+FT_SFX_CH1			= FT_SFX_STRUCT_SIZE*1
+FT_SFX_CH2			= FT_SFX_STRUCT_SIZE*2
+FT_SFX_CH3			= FT_SFX_STRUCT_SIZE*3
 
 
 ;aliases for the APU registers
 
 APU_PL1_VOL		= $4000
-APU_PL1_SWEEP		= $4001
+APU_PL1_SWEEP	= $4001
 APU_PL1_LO		= $4002
 APU_PL1_HI		= $4003
 APU_PL2_VOL		= $4004
-APU_PL2_SWEEP		= $4005
+APU_PL2_SWEEP	= $4005
 APU_PL2_LO		= $4006
 APU_PL2_HI		= $4007
-APU_TRI_LINEAR		= $4008
+APU_TRI_LINEAR	= $4008
 APU_TRI_LO		= $400a
 APU_TRI_HI		= $400b
-APU_NOISE_VOL		= $400c
-APU_NOISE_LO		= $400e
-APU_NOISE_HI		= $400f
-APU_DMC_FREQ		= $4010
+APU_NOISE_VOL	= $400c
+APU_NOISE_LO	= $400e
+APU_NOISE_HI	= $400f
+APU_DMC_FREQ	= $4010
 APU_DMC_RAW		= $4011
-APU_DMC_START		= $4012
+APU_DMC_START	= $4012
 APU_DMC_LEN		= $4013
 APU_SND_CHN		= $4015
 
@@ -269,9 +190,9 @@ FT_MR_PULSE1_H		= APU_PL1_HI
 FT_MR_PULSE2_V		= APU_PL2_VOL
 FT_MR_PULSE2_L		= APU_PL2_LO
 FT_MR_PULSE2_H		= APU_PL2_HI
-FT_MR_TRI_V		= APU_TRI_LINEAR
-FT_MR_TRI_L		= APU_TRI_LO
-FT_MR_TRI_H		= APU_TRI_HI
+FT_MR_TRI_V			= APU_TRI_LINEAR
+FT_MR_TRI_L			= APU_TRI_LO
+FT_MR_TRI_H			= APU_TRI_HI
 FT_MR_NOISE_V		= APU_NOISE_VOL
 FT_MR_NOISE_F		= APU_NOISE_LO
 	.else								;otherwise write to the output buffer
@@ -281,9 +202,9 @@ FT_MR_PULSE1_H		= FT_OUT_BUF+2
 FT_MR_PULSE2_V		= FT_OUT_BUF+3
 FT_MR_PULSE2_L		= FT_OUT_BUF+4
 FT_MR_PULSE2_H		= FT_OUT_BUF+5
-FT_MR_TRI_V		= FT_OUT_BUF+6
-FT_MR_TRI_L		= FT_OUT_BUF+7
-FT_MR_TRI_H		= FT_OUT_BUF+8
+FT_MR_TRI_V			= FT_OUT_BUF+6
+FT_MR_TRI_L			= FT_OUT_BUF+7
+FT_MR_TRI_H			= FT_OUT_BUF+8
 FT_MR_NOISE_V		= FT_OUT_BUF+9
 FT_MR_NOISE_F		= FT_OUT_BUF+10
 	.endif
@@ -292,20 +213,21 @@ FT_MR_NOISE_F		= FT_OUT_BUF+10
 
 ;------------------------------------------------------------------------------
 ; reset APU, initialize FamiTone
+; in: A   0 for PAL, not 0 for NTSC
+;     X,Y pointer to music data
 ;------------------------------------------------------------------------------
 
 FamiToneInit:
 
-	sta FT_SONG_LIST_L		;store music data pointer for further use
-	stx FT_SONG_LIST_H
-	sta <FT_TEMP_PTR_L
-	stx <FT_TEMP_PTR_H
+	stx FT_SONG_LIST_L		;store music data pointer for further use
+	sty FT_SONG_LIST_H
+	stx <FT_TEMP_PTR_L
+	sty <FT_TEMP_PTR_H
 
 	.if(FT_PITCH_FIX)
-        lda $2002	; PPU_STATUS
-        and #$80	; NTSC mode bit
-        eor #$80
-        lsr
+	tax						;set SZ flags for A
+	beq @pal
+	lda #64
 @pal:
 	.else
 	.if(FT_PAL_SUPPORT)
@@ -455,9 +377,10 @@ FamiToneMusicPlay:
 	cpx #.lobyte(FT_CHANNELS)+FT_CHANNELS_ALL
 	bne @set_channels
 
-
+	.if(FT_PAL_SUPPORT)
 	lda FT_PAL_ADJUST		;read tempo for PAL or NTSC
 	beq @pal
+	.endif
 	iny
 	iny
 @pal:
@@ -1094,13 +1017,13 @@ _FT2SamplePlay:
 
 ;------------------------------------------------------------------------------
 ; init sound effects player, set pointer to data
-; in: A,X is address of sound effects data
+; in: X,Y is address of sound effects data
 ;------------------------------------------------------------------------------
 
 FamiToneSfxInit:
 
-	sta <FT_TEMP_PTR_L
-	stx <FT_TEMP_PTR_H
+	stx <FT_TEMP_PTR_L
+	sty <FT_TEMP_PTR_H
 	
 	ldy #0
 	
