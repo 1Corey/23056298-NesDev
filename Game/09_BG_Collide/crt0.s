@@ -286,4 +286,4 @@ sounds_data:
 
 .segment "CHARS"
 
-	.incbin "collide.chr"
+	.incbin "spaceship.chr"

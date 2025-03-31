@@ -62,7 +62,7 @@ const unsigned char palette_bg[]={
 }; 
 
 const unsigned char palette_sp[]={
-0x0f, 0x0f, 0x0f, 0x28, // black, black, yellow
+0x0f, 0x00, 0x10, 0x30, // dark grey, grey, white
 0x0f, 0x0f, 0x0f, 0x12, // black, black, blue
 0,0,0,0,
 0,0,0,0

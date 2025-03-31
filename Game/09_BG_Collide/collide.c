@@ -10,7 +10,7 @@
 #include "LIB/nesdoug.h"
 #include "Sprites.h" // holds our metasprite data
 #include "collide.h"
-
+#include "background.h"
 
 	
 	
@@ -65,6 +65,7 @@ void draw_bg(void){
 	// this sets a start position on the BG, top left of screen
 	vram_adr(NAMETABLE_A);
 	
+	vram_write(background, 1024);
 	// draw a row of tiles
 	for(temp_y = 0; temp_y < 15; ++temp_y){
 		for(temp_x = 0; temp_x < 16; ++temp_x){
