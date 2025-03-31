@@ -180,9 +180,9 @@ void bg_collision(){
 
 void check_start(void){
 	// if START is pressed, load another background
-	if(pad1_new & PAD_START){
-		++which_bg;
-		if(which_bg >= 4) which_bg = 0;
-		draw_bg();
-	}	
+	//if(pad1_new & PAD_START){
+	//	++which_bg;
+	//	if(which_bg >= 4) which_bg = 0;
+	//	draw_bg();
+	//}	
 }

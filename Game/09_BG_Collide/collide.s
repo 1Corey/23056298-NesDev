@@ -1913,31 +1913,9 @@ L000A:	rts
 .segment	"CODE"
 
 ;
-; if(pad1_new & PAD_START){
-;
-	lda     _pad1_new
-	and     #$10
-	beq     L0002
-;
-; ++which_bg;
-;
-	inc     _which_bg
-;
-; if(which_bg >= 4) which_bg = 0;
-;
-	lda     _which_bg
-	cmp     #$04
-	bcc     L0003
-	lda     #$00
-	sta     _which_bg
-;
-; draw_bg();
-;
-L0003:	jmp     _draw_bg
-;
 ; }
 ;
-L0002:	rts
+	rts
 
 .endproc
 
