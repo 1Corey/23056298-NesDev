@@ -5,8 +5,8 @@ file	id=1,name="..\..\cc65\asminc/zeropage.inc",size=719,mtime=0x67EA5C5D,mod=0
 file	id=2,name="LIB/neslib.s",size=16276,mtime=0x67EAB908,mod=0
 file	id=3,name="LIB/nesdoug.s",size=12479,mtime=0x67EAB908,mod=0
 file	id=4,name="MUSIC/famitone2.s",size=28839,mtime=0x67EAB908,mod=0
-file	id=5,name="spaceship.chr",size=8192,mtime=0x67EAB908,mod=0
-file	id=6,name="collide.s",size=26625,mtime=0x67EABAC0,mod=1
+file	id=5,name="spaceship.chr",size=8192,mtime=0x67EBE863,mod=0
+file	id=6,name="collide.s",size=26625,mtime=0x67EBE7B9,mod=1
 file	id=7,name="..\..\cc65\asminc/longbranch.mac",size=2632,mtime=0x67EA5C5C,mod=1
 file	id=8,name="/home/runner/work/cc65/cc65/asminc/cpu.mac",size=922,mtime=0x67DDF42D,mod=4+5+6
 file	id=9,name="/home/runner/work/cc65/cc65/asminc/zeropage.inc",size=719,mtime=0x67DDF42D,mod=8

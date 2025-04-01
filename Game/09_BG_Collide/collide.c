@@ -12,8 +12,36 @@
 #include "collide.h"
 #include "background.h"
 
-	
-	
+#define NMISSILES 8	// max number of missiles
+#define YOFFSCREEN 240	// offscreen y position (hidden)
+
+typedef struct {
+  byte xpos;
+  byte ypos;
+  signed char dx;
+  signed char dy;
+} Missile;
+
+Missile missiles[NMISSILES];
+
+void move_missiles() {
+  byte i;
+  for (i=0; i<8; i++) { 
+    if (missiles[i].ypos != YOFFSCREEN) {
+      // hit the bottom or top?
+      if ((byte)(missiles[i].ypos += missiles[i].dy) > YOFFSCREEN) {
+        missiles[i].ypos = YOFFSCREEN;
+      }
+    }
+  }
+}
+
+void spawn_missile() {
+	if (missiles[i].ypos != YOFFSCREEN && 
+        in_rect(missiles[i].xpos, missiles[i].ypos + 16, 
+                player_x, player_y, 16, 16))
+}
+
 void main (void) {
 	
 	ppu_off(); // screen off
@@ -66,6 +94,7 @@ void draw_bg(void){
 	vram_adr(NAMETABLE_A);
 	
 	vram_write(background, 1024);
+
 	// draw a row of tiles
 	for(temp_y = 0; temp_y < 15; ++temp_y){
 		for(temp_x = 0; temp_x < 16; ++temp_x){
@@ -175,8 +204,6 @@ void bg_collision(){
 		++collision_D;
 	}
 }
-
-
 
 void check_start(void){
 	// if START is pressed, load another background

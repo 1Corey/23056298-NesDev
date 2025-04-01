@@ -28,6 +28,7 @@
 	.import		_set_scroll_y
 	.export		_YellowSpr
 	.export		_BlueSpr
+	.export		_Bullet
 	.export		_pad1
 	.export		_pad1_new
 	.export		_collision
@@ -50,6 +51,7 @@
 	.export		_All_Collision_Maps
 	.export		_palette_bg
 	.export		_palette_sp
+	.export		_palette_bl
 	.export		_draw_bg
 	.export		_draw_sprites
 	.export		_movement
@@ -103,6 +105,24 @@ _BlueSpr:
 	.byte	$08
 	.byte	$10
 	.byte	$41
+	.byte	$80
+_Bullet:
+	.byte	$f8
+	.byte	$f8
+	.byte	$30
+	.byte	$00
+	.byte	$00
+	.byte	$f8
+	.byte	$31
+	.byte	$00
+	.byte	$f8
+	.byte	$00
+	.byte	$32
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$33
+	.byte	$00
 	.byte	$80
 _c2:
 	.byte	$01
@@ -365,6 +385,23 @@ _palette_bg:
 	.byte	$00
 	.byte	$00
 _palette_sp:
+	.byte	$0f
+	.byte	$00
+	.byte	$10
+	.byte	$30
+	.byte	$0f
+	.byte	$0f
+	.byte	$0f
+	.byte	$12
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+_palette_bl:
 	.byte	$0f
 	.byte	$00
 	.byte	$10

@@ -17,4 +17,12 @@ const unsigned char BlueSpr[]={
 	128
 };
 
+const unsigned char Bullet[]={
+	- 8,- 8,0x30,0,
+	  0,- 8,0x31,0,
+	- 8,  0,0x32,0,
+	  0,  0,0x33,0,
+	0x80
+};
+
 
