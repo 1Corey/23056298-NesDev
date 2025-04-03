@@ -2,9 +2,10 @@ al 000001 .NES_CHR_BANKS
 al 000000 .NES_MAPPER
 al 000001 .NES_MIRRORING
 al 000002 .NES_PRG_BANKS
-al 00943C ._All_Collision_Maps
+al 00944D ._All_Collision_Maps
 al 00933B ._BlueSpr
 al 000300 ._BoxGuy1
+al 00934C ._Missile
 al 00932A ._YellowSpr
 al 000304 .__BSS_LOAD__
 al 000304 .__BSS_RUN__
@@ -12,7 +13,7 @@ al 0000F0 .__BSS_SIZE__
 al 0086E8 .__CODE_LOAD__
 al 0086E8 .__CODE_RUN__
 al 000C42 .__CODE_SIZE__
-al 00985E .__DATA_LOAD__
+al 00986F .__DATA_LOAD__
 al 000300 .__DATA_RUN__
 al 000004 .__DATA_SIZE__
 al 000010 .__PRG_FILEOFFS__
@@ -25,7 +26,7 @@ al 000400 .__RAM_SIZE__
 al 000300 .__RAM_START__
 al 00932A .__RODATA_LOAD__
 al 00932A .__RODATA_RUN__
-al 000534 .__RODATA_SIZE__
+al 000545 .__RODATA_SIZE__
 al 000100 .__STACKSIZE__
 al 000700 .__STACK_START__
 al 008000 .__STARTUP_LOAD__
@@ -37,13 +38,13 @@ al 00005A .__ZP_LAST__
 al 000100 .__ZP_SIZE__
 al 000000 .__ZP_START__
 al 008828 ._add_scroll_y
-al 00945E ._background
+al 00946F ._background
 al 008416 ._bank_bg
 al 008406 ._bank_spr
 al 0091A8 ._bg_collision
 al 0089D3 ._buffer_1_mt
 al 0088B0 ._buffer_4_mt
-al 00934C ._c2
+al 00935D ._c2
 al 000304 ._c_map
 al 008775 ._check_collision
 al 009249 ._check_start
@@ -98,8 +99,8 @@ al 00823E ._pal_col
 al 0087D5 ._pal_fade_to
 al 008235 ._pal_spr
 al 00825D ._pal_spr_bright
-al 00943E ._palette_bg
-al 00944E ._palette_sp
+al 00944F ._palette_bg
+al 00945F ._palette_sp
 al 00829E ._ppu_mask
 al 008280 ._ppu_off
 al 008289 ._ppu_on_all
