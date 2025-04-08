@@ -12,7 +12,10 @@
 #include "collide.h"
 #include "background.h"
 
-	
+unsigned char missile_x;
+unsigned char missile_y;
+char missile_active = 0;
+
 	
 void main (void) {
 	
@@ -47,7 +50,17 @@ void main (void) {
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 		
+		if ((pad1_new & PAD_A) && !missile_active) {
+    	missile_x = BoxGuy1.X + 8;
+    	missile_y = BoxGuy1.Y - 4;
+    	missile_active = 1;
+}
 		movement();
+
+		if (missile_active) {
+    	missile_y -= 2;
+    	if (missile_y < 8) missile_active = 0;
+}
 		draw_sprites();
 		check_start();
 	}
@@ -102,12 +115,15 @@ void draw_bg(void){
 
 
 void draw_sprites(void){
-	// clear all sprites from sprite buffer
 	oam_clear();
-	
-	// draw 1 metasprite
+
 	oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
+
+	if (missile_active) {
+		oam_meta_spr(missile_x, missile_y, Missile);
+	}
 }
+
 	
 	
 	
