@@ -11,6 +11,7 @@
 #include "Sprites.h" // holds our metasprite data
 #include "collide.h"
 #include "background.h"
+#include <stdlib.h>
 
 unsigned char frame_count = 0;
 unsigned char enemy_direction = 1; // 1 = right, 0 = left
@@ -74,7 +75,8 @@ void fire_enemy_missile() {
 
 
 void main (void) {
-	
+	rand();	//rand initialised
+
 	ppu_off(); // screen off
 	
 	// load the palettes
@@ -107,11 +109,23 @@ void main (void) {
 		
 		frame_count++;  // you can add this global to track time
 
-	// Fire every 60 frames (~once per second)
-	if (frame_count >= 60) {
-    	fire_enemy_missile();
-    	frame_count = 0;
-	}
+	if (frame_count >= 15) {  // check every 15 frames for quicker reactions
+    for (i = 0; i < MAX_ENEMIES; ++i) {
+        if (enemies[i].active && (rand() & 7) == 0) {  // ~1 in 8 chance
+            unsigned char j;
+            for (j = 0; j < MAX_ENEMY_MISSILES; ++j) {
+                if (!enemyMissiles[j].active) {
+                    enemyMissiles[j].x = enemies[i].x;
+                    enemyMissiles[j].y = enemies[i].y + 8;
+                    enemyMissiles[j].active = 1;
+                    break;
+                }
+            }
+        }
+    }
+    frame_count = 0;
+}
+
 
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first

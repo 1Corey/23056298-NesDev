@@ -59,6 +59,7 @@
 	.export		_bg_collision
 	.export		_check_start
 	.export		_background
+	.import		_rand
 	.export		_frame_count
 	.export		_enemy_direction
 	.export		_missile_x
@@ -2373,6 +2374,10 @@ L0003:	jmp     incsp2
 .segment	"CODE"
 
 ;
+; rand(); //rand initialised
+;
+	jsr     _rand
+;
 ; ppu_off(); // screen off
 ;
 	jsr     _ppu_off
@@ -2427,25 +2432,159 @@ L0002:	jsr     decsp1
 ;
 	inc     _frame_count
 ;
-; if (frame_count >= 60) {
+; if (frame_count >= 15) {  // check every 15 frames for quicker reactions
 ;
 	lda     _frame_count
-	cmp     #$3C
+	cmp     #$0F
 	lda     #$00
-	bcc     L0023
+	jcc     L0038
 ;
-; fire_enemy_missile();
+; for (i = 0; i < MAX_ENEMIES; ++i) {
 ;
-	jsr     _fire_enemy_missile
+	tay
+L002E:	sta     (sp),y
+	cmp     #$05
+	jcs     L0036
+;
+; if (enemies[i].active && (rand() & 7) == 0) {  // ~1 in 8 chance
+;
+	ldx     #$00
+	lda     (sp),y
+	jsr     mulax3
+	clc
+	adc     #<(_enemies)
+	sta     ptr1
+	txa
+	adc     #>(_enemies)
+	sta     ptr1+1
+	ldy     #$02
+	lda     (ptr1),y
+	jeq     L0008
+	jsr     _rand
+	and     #$07
+	jne     L0008
+;
+; for (j = 0; j < MAX_ENEMY_MISSILES; ++j) {
+;
+	jsr     decsp1
+	tay
+L002D:	sta     (sp),y
+	cmp     #$04
+	jcs     L0010
+;
+; if (!enemyMissiles[j].active) {
+;
+	ldx     #$00
+	lda     (sp),y
+	jsr     mulax3
+	clc
+	adc     #<(_enemyMissiles)
+	sta     ptr1
+	txa
+	adc     #>(_enemyMissiles)
+	sta     ptr1+1
+	ldy     #$02
+	lda     (ptr1),y
+	bne     L0011
+;
+; enemyMissiles[j].x = enemies[i].x;
+;
+	tax
+	lda     (sp,x)
+	jsr     mulax3
+	clc
+	adc     #<(_enemyMissiles)
+	sta     sreg
+	txa
+	adc     #>(_enemyMissiles)
+	sta     sreg+1
+	ldx     #$00
+	dey
+	lda     (sp),y
+	jsr     mulax3
+	sta     ptr1
+	txa
+	clc
+	adc     #>(_enemies)
+	sta     ptr1+1
+	ldy     #<(_enemies)
+	lda     (ptr1),y
+	ldy     #$00
+	sta     (sreg),y
+;
+; enemyMissiles[j].y = enemies[i].y + 8;
+;
+	ldx     #$00
+	lda     (sp),y
+	jsr     mulax3
+	clc
+	adc     #<(_enemyMissiles)
+	sta     sreg
+	txa
+	adc     #>(_enemyMissiles)
+	sta     sreg+1
+	ldx     #$00
+	iny
+	lda     (sp),y
+	jsr     mulax3
+	clc
+	adc     #<(_enemies)
+	sta     ptr1
+	txa
+	adc     #>(_enemies)
+	sta     ptr1+1
+	lda     (ptr1),y
+	clc
+	adc     #$08
+	sta     (sreg),y
+;
+; enemyMissiles[j].active = 1;
+;
+	ldx     #$00
+	lda     (sp,x)
+	jsr     mulax3
+	clc
+	adc     #<(_enemyMissiles)
+	sta     ptr1
+	txa
+	adc     #>(_enemyMissiles)
+	sta     ptr1+1
+	tya
+	iny
+	sta     (ptr1),y
+;
+; break;
+;
+	jmp     L0010
+;
+; for (j = 0; j < MAX_ENEMY_MISSILES; ++j) {
+;
+L0011:	ldy     #$00
+	clc
+	lda     #$01
+	adc     (sp),y
+	jmp     L002D
+;
+; }
+;
+L0010:	jsr     incsp1
+;
+; for (i = 0; i < MAX_ENEMIES; ++i) {
+;
+L0008:	ldy     #$00
+	clc
+	lda     #$01
+	adc     (sp),y
+	jmp     L002E
 ;
 ; frame_count = 0;
 ;
-	lda     #$00
+L0036:	tya
 	sta     _frame_count
 ;
 ; pad1 = pad_poll(0); // read the first controller
 ;
-L0023:	jsr     _pad_poll
+L0038:	jsr     _pad_poll
 	sta     _pad1
 ;
 ; pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
@@ -2458,10 +2597,10 @@ L0023:	jsr     _pad_poll
 ;
 	lda     _pad1
 	and     #$80
-	beq     L0006
+	beq     L0015
 	lda     _missile_y
 	cmp     #$F0
-	bne     L0006
+	bne     L0015
 ;
 ; missile_x = BoxGuy1.X + 7;
 ;
@@ -2479,15 +2618,15 @@ L0023:	jsr     _pad_poll
 ;
 ; movement();
 ;
-L0006:	jsr     _movement
+L0015:	jsr     _movement
 ;
 ; for (i = 0; i < MAX_ENEMIES; ++i) {
 ;
 	lda     #$00
 	tay
-L0021:	sta     (sp),y
+L0032:	sta     (sp),y
 	cmp     #$05
-	jcs     L002A
+	jcs     L003F
 ;
 ; if (enemies[i].active) {
 ;
@@ -2502,12 +2641,12 @@ L0021:	sta     (sp),y
 	sta     ptr1+1
 	ldy     #$02
 	lda     (ptr1),y
-	beq     L0012
+	beq     L0021
 ;
 ; if (enemy_direction) {
 ;
 	lda     _enemy_direction
-	beq     L0011
+	beq     L0020
 ;
 ; enemies[i].x += 1;
 ;
@@ -2527,11 +2666,11 @@ L0021:	sta     (sp),y
 ;
 ; else {
 ;
-	jmp     L001E
+	jmp     L002F
 ;
 ; enemies[i].x -= 1;
 ;
-L0011:	tay
+L0020:	tay
 	tax
 	lda     (sp),y
 	jsr     mulax3
@@ -2544,11 +2683,11 @@ L0011:	tay
 	lda     (ptr1),y
 	sec
 	sbc     #$01
-L001E:	sta     (ptr1),y
+L002F:	sta     (ptr1),y
 ;
 ; if (enemies[i].x >= 240) {
 ;
-L0012:	ldx     #$00
+L0021:	ldx     #$00
 	lda     (sp,x)
 	jsr     mulax3
 	sta     ptr1
@@ -2559,7 +2698,7 @@ L0012:	ldx     #$00
 	ldy     #<(_enemies)
 	lda     (ptr1),y
 	cmp     #$F0
-	bcc     L0013
+	bcc     L0022
 ;
 ; enemy_direction = 0;
 ;
@@ -2567,8 +2706,8 @@ L0012:	ldx     #$00
 ;
 ; else if (enemies[i].x <= 32) {
 ;
-	jmp     L001F
-L0013:	ldx     #$00
+	jmp     L0030
+L0022:	ldx     #$00
 	lda     (sp,x)
 	jsr     mulax3
 	sta     ptr1
@@ -2579,20 +2718,20 @@ L0013:	ldx     #$00
 	ldy     #<(_enemies)
 	lda     (ptr1),y
 	cmp     #$21
-	bcs     L0027
+	bcs     L003C
 ;
 ; enemy_direction = 1;
 ;
 	lda     #$01
-L001F:	sta     _enemy_direction
+L0030:	sta     _enemy_direction
 ;
 ; for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
 ;
-L0027:	lda     #$00
+L003C:	lda     #$00
 	tay
-L0020:	sta     (sp),y
+L0031:	sta     (sp),y
 	cmp     #$04
-	bcs     L0029
+	bcs     L003E
 ;
 ; if (enemyMissiles[i].active) {
 ;
@@ -2607,7 +2746,7 @@ L0020:	sta     (sp),y
 	sta     ptr1+1
 	ldy     #$02
 	lda     (ptr1),y
-	beq     L0018
+	beq     L0027
 ;
 ; enemyMissiles[i].y += 2;
 ;
@@ -2640,7 +2779,7 @@ L0020:	sta     (sp),y
 	ldy     #$01
 	lda     (ptr1),y
 	cmp     #$F1
-	bcc     L0018
+	bcc     L0027
 ;
 ; enemyMissiles[i].active = 0; // turn off if offscreen
 ;
@@ -2659,24 +2798,24 @@ L0020:	sta     (sp),y
 ;
 ; for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
 ;
-L0018:	ldy     #$00
+L0027:	ldy     #$00
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0020
+	jmp     L0031
 ;
 ; for (i = 0; i < MAX_ENEMIES; ++i) {
 ;
-L0029:	clc
+L003E:	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0021
+	jmp     L0032
 ;
 ; if (missile_y != YOFFSCREEN) {
 ;
-L002A:	lda     _missile_y
+L003F:	lda     _missile_y
 	cmp     #$F0
-	beq     L001D
+	beq     L002C
 ;
 ; missile_y += MISSILE_SPEED;  // move up
 ;
@@ -2688,13 +2827,13 @@ L002A:	lda     _missile_y
 ; if (missile_y < 8) missile_y = YOFFSCREEN;  // if off screen, deactivate
 ;
 	cmp     #$08
-	bcs     L001D
+	bcs     L002C
 	lda     #$F0
 	sta     _missile_y
 ;
 ; draw_sprites();
 ;
-L001D:	jsr     _draw_sprites
+L002C:	jsr     _draw_sprites
 ;
 ; check_start();
 ;
