@@ -12,6 +12,7 @@
 #include "collide.h"
 #include "background.h"
 
+unsigned char frame_count = 0;
 unsigned char enemy_direction = 1; // 1 = right, 0 = left
 
 #define YOFFSCREEN 240	// offscreen y position
@@ -38,6 +39,39 @@ void spawn_enemy_wave() {
         enemies[i].active = 1;
     }
 }
+
+
+#define MAX_ENEMY_MISSILES 4
+
+struct EnemyMissile {
+    unsigned char x;
+    unsigned char y;
+    unsigned char active;
+};
+
+struct EnemyMissile enemyMissiles[MAX_ENEMY_MISSILES];
+
+
+// Call this occasionally (e.g., every 60 frames or randomly)
+void fire_enemy_missile() {
+    unsigned char i, e;
+
+    // find an inactive missile slot
+    for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+        if (!enemyMissiles[i].active) {
+            // find a random active enemy to shoot from
+            for (e = 0; e < MAX_ENEMIES; ++e) {
+                if (enemies[e].active) {
+                    enemyMissiles[i].x = enemies[e].x;
+                    enemyMissiles[i].y = enemies[e].y + 8;
+                    enemyMissiles[i].active = 1;
+                    return;
+                }
+            }
+        }
+    }
+}
+
 
 void main (void) {
 	
@@ -71,6 +105,14 @@ void main (void) {
 		ppu_wait_nmi(); // wait till beginning of the frame
 		// the sprites are pushed from a buffer to the OAM during nmi
 		
+		frame_count++;  // you can add this global to track time
+
+	// Fire every 60 frames (~once per second)
+	if (frame_count >= 60) {
+    	fire_enemy_missile();
+    	frame_count = 0;
+	}
+
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 		
@@ -97,6 +139,18 @@ void main (void) {
 		else if (enemies[i].x <= 32) {
 			enemy_direction = 1;
 		}
+
+		// Move enemy missiles
+for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+    if (enemyMissiles[i].active) {
+        enemyMissiles[i].y += 2;
+
+        if (enemyMissiles[i].y > 240) {
+            enemyMissiles[i].active = 0; // turn off if offscreen
+        }
+    }
+}
+
 
 	}
 		if (missile_y != YOFFSCREEN) {
@@ -157,21 +211,33 @@ void draw_bg(void){
 
 
 void draw_sprites(void){
-	unsigned char i;
-	oam_clear();
+    unsigned char i;
 
-	oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
+    oam_clear(); // clear sprite memory each frame
 
-	if (missile_y != YOFFSCREEN) {
-    oam_meta_spr(missile_x, missile_y, Missile);
-	}
+    // Draw the player
+    oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
 
-	for (i = 0; i < MAX_ENEMIES; ++i) {
-    if (enemies[i].active) {
-        oam_meta_spr(enemies[i].x, enemies[i].y, Enemy);
+    // Draw the player missile
+    if (missile_y != YOFFSCREEN) {
+        oam_meta_spr(missile_x, missile_y, Missile);
+    }
+
+    // Draw enemies
+    for (i = 0; i < MAX_ENEMIES; ++i) {
+        if (enemies[i].active) {
+            oam_meta_spr(enemies[i].x, enemies[i].y, Enemy);
+        }
+    }
+
+    // Draw enemy missiles
+    for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+        if (enemyMissiles[i].active) {
+            oam_meta_spr(enemyMissiles[i].x, enemyMissiles[i].y, EnemyMissile);
+        }
     }
 }
-}
+
 
 
 	
