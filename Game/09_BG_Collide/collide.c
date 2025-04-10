@@ -18,16 +18,17 @@ unsigned char enemy_direction = 1; // 1 = right, 0 = left
 
 #define YOFFSCREEN 240	// offscreen y position
 #define MISSILE_SPEED -4
+#define MAX_ENEMIES 5
+#define MAX_ENEMY_MISSILES 4
 
 unsigned char missile_x;
 unsigned char missile_y;
 char missile_active = 0;
 
-#define MAX_ENEMIES 5
-
 typedef struct {
     unsigned char x, y;
     unsigned char active;
+	unsigned char direction;
 } FormationEnemy;
 
 FormationEnemy enemies[MAX_ENEMIES];
@@ -38,11 +39,9 @@ void spawn_enemy_wave() {
         enemies[i].x = 40 + (i * 30); // spread out horizontally
         enemies[i].y = 40; // all at the same height
         enemies[i].active = 1;
+        enemies[i].direction = 1; // initially move right
     }
 }
-
-
-#define MAX_ENEMY_MISSILES 4
 
 struct EnemyMissile {
     unsigned char x;
@@ -52,31 +51,22 @@ struct EnemyMissile {
 
 struct EnemyMissile enemyMissiles[MAX_ENEMY_MISSILES];
 
-
-// Call this occasionally (e.g., every 60 frames or randomly)
-void fire_enemy_missile() {
-    unsigned char i, e;
-
-    // find an inactive missile slot
+// Fire missile from the enemy
+void fire_enemy_missile(unsigned char enemy_index) {
+    unsigned char i;
     for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
         if (!enemyMissiles[i].active) {
-            // find a random active enemy to shoot from
-            for (e = 0; e < MAX_ENEMIES; ++e) {
-                if (enemies[e].active) {
-                    enemyMissiles[i].x = enemies[e].x;
-                    enemyMissiles[i].y = enemies[e].y + 8;
-                    enemyMissiles[i].active = 1;
-                    return;
-                }
-            }
+            enemyMissiles[i].x = enemies[enemy_index].x;
+            enemyMissiles[i].y = enemies[enemy_index].y + 8; // missile starts just below enemy
+            enemyMissiles[i].active = 1;
+            return;
         }
     }
 }
 
-
 void main (void) {
 	rand();	//rand initialised
-
+  
 	ppu_off(); // screen off
 	
 	// load the palettes
@@ -101,7 +91,6 @@ void main (void) {
 	// ppu_on_all(); //already done in draw_bg()
 	
 	while (1){
-
 		unsigned char i;
 		// infinite loop
 		ppu_wait_nmi(); // wait till beginning of the frame
@@ -109,22 +98,24 @@ void main (void) {
 		
 		frame_count++;  // you can add this global to track time
 
-	if (frame_count >= 15) {  // check every 15 frames for quicker reactions
-    for (i = 0; i < MAX_ENEMIES; ++i) {
-        if (enemies[i].active && (rand() & 7) == 0) {  // ~1 in 8 chance
-            unsigned char j;
-            for (j = 0; j < MAX_ENEMY_MISSILES; ++j) {
-                if (!enemyMissiles[j].active) {
-                    enemyMissiles[j].x = enemies[i].x;
-                    enemyMissiles[j].y = enemies[i].y + 8;
-                    enemyMissiles[j].active = 1;
-                    break;
+	// Move all enemies and make them fire missiles randomly
+        for (i = 0; i < MAX_ENEMIES; ++i) {
+            if (enemies[i].active) {
+                // Move enemies
+                if (enemies[i].direction) {
+                    enemies[i].x++; // Move right
+                    if (enemies[i].x >= 240) enemies[i].direction = 0; // Change direction to left
+                } else {
+                    enemies[i].x--; // Move left
+                    if (enemies[i].x <= 32) enemies[i].direction = 1; // Change direction to right
+                }
+
+                // Fire missiles randomly (e.g., every 60 frames, 20% chance to fire)
+                if (frame_count % 60 == 0 && rand() % 10 < 2) {
+                    fire_enemy_missile(i);
                 }
             }
         }
-    }
-    frame_count = 0;
-}
 
 
 		pad1 = pad_poll(0); // read the first controller
@@ -154,17 +145,16 @@ void main (void) {
 			enemy_direction = 1;
 		}
 
-		// Move enemy missiles
-for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
-    if (enemyMissiles[i].active) {
-        enemyMissiles[i].y += 2;
+	// Move enemy missiles
+	for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+    	if (enemyMissiles[i].active) {
+        	enemyMissiles[i].y += 2;
 
-        if (enemyMissiles[i].y > 240) {
-            enemyMissiles[i].active = 0; // turn off if offscreen
-        }
-    }
-}
-
+        	if (enemyMissiles[i].y > 240) {
+            	enemyMissiles[i].active = 0; // turn off if offscreen
+        	}
+    	}
+	}
 
 	}
 		if (missile_y != YOFFSCREEN) {
