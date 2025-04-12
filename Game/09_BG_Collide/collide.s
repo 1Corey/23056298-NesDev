@@ -74,6 +74,7 @@
 	.export		_effect_y
 	.export		_effect_timer
 	.export		_player_alive
+	.export		_game_over_displayed
 	.export		_fire_enemy_missile
 	.export		_reset_game
 	.export		_draw_game_over
@@ -100,6 +101,8 @@ _effect_timer:
 	.byte	$00
 _player_alive:
 	.byte	$01
+_game_over_displayed:
+	.byte	$00
 
 .segment	"RODATA"
 
@@ -2597,6 +2600,11 @@ L000C:	sta     (sp),y
 ;
 L0008:	jsr     _draw_bg
 ;
+; game_over_displayed = 0;
+;
+	lda     #$00
+	sta     _game_over_displayed
+;
 ; }
 ;
 	jmp     incsp1
@@ -2806,7 +2814,7 @@ L0008:	jsr     _draw_bg
 L0002:	jsr     decsp1
 	jsr     _ppu_wait_nmi
 ;
-; frame_count++;  // you can add this global to track time
+; frame_count++;
 ;
 	inc     _frame_count
 ;
@@ -3020,7 +3028,7 @@ L0015:	jsr     _ppu_wait_nmi
 	and     #$10
 	beq     L0015
 ;
-; reset_game();
+; reset_game(); // Reset game after W pressed
 ;
 	jsr     _reset_game
 ;
@@ -3266,7 +3274,7 @@ L005C:	lda     _missile_y
 	adc     _missile_y
 	sta     _missile_y
 ;
-; if (missile_y < 8) missile_y = YOFFSCREEN;  // if off screen, deactivate
+; if (missile_y < 8) missile_y = YOFFSCREEN;  // if off screen, delete missile
 ;
 	cmp     #$08
 	bcs     L005D
@@ -3587,7 +3595,7 @@ L0047:	jsr     pushax
 L0048:	jsr     tosicmp
 	bpl     L0041
 ;
-; player_alive = 0;  // Player is "dead"
+; player_alive = 0;  // Player is dead
 ;
 	lda     #$00
 	sta     _player_alive

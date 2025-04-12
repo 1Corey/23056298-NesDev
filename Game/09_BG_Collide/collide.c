@@ -56,6 +56,7 @@ unsigned char effect_y = 0;
 unsigned char effect_timer = 0;
 
 unsigned char player_alive = 1;
+unsigned char game_over_displayed = 0;
 
 // Fire missile from the enemy
 void fire_enemy_missile(unsigned char enemy_index) {
@@ -93,6 +94,7 @@ void reset_game(void) {
 
     // Redraw background
     draw_bg();
+	game_over_displayed = 0;
 }
 
 void draw_game_over(void) {
