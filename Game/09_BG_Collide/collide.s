@@ -2586,10 +2586,10 @@ L0008:	jsr     _draw_bg
 ;
 	jsr     _ppu_off
 ;
-; vram_adr(NTADR_A(11, 14));
+; vram_adr(NTADR_A(12, 14));
 ;
 	ldx     #$21
-	lda     #$CB
+	lda     #$CC
 	jsr     _vram_adr
 ;
 ; vram_put(0x0A); // G
@@ -2640,6 +2640,67 @@ L0008:	jsr     _draw_bg
 ; vram_put(0x28); // !
 ;
 	lda     #$28
+	jsr     _vram_put
+;
+; vram_adr(NTADR_A(11, 16));
+;
+	ldx     #$22
+	lda     #$0B
+	jsr     _vram_adr
+;
+; vram_put(0x13); // P
+;
+	lda     #$13
+	jsr     _vram_put
+;
+; vram_put(0x15); // R
+;
+	lda     #$15
+	jsr     _vram_put
+;
+; vram_put(0x08); // E
+;
+	lda     #$08
+	jsr     _vram_put
+;
+; vram_put(0x16); // S
+;
+	lda     #$16
+	jsr     _vram_put
+;
+; vram_put(0x16); // S
+;
+	lda     #$16
+	jsr     _vram_put
+;
+; vram_put(0x00); // Space
+;
+	lda     #$00
+	jsr     _vram_put
+;
+; vram_put(0x16); // S
+;
+	lda     #$16
+	jsr     _vram_put
+;
+; vram_put(0x17); // T
+;
+	lda     #$17
+	jsr     _vram_put
+;
+; vram_put(0x04); // A
+;
+	lda     #$04
+	jsr     _vram_put
+;
+; vram_put(0x15); // R
+;
+	lda     #$15
+	jsr     _vram_put
+;
+; vram_put(0x17); // T
+;
+	lda     #$17
 	jsr     _vram_put
 ;
 ; ppu_on_all();  // turn screen back on

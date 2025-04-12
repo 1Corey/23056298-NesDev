@@ -99,7 +99,7 @@ void draw_game_over(void) {
     ppu_off();  // turn screen off for safe drawing
 
     // Set VRAM address to write to (middle of screen: x=11, y=14)
-    vram_adr(NTADR_A(11, 14));
+    vram_adr(NTADR_A(12, 14));
 
     vram_put(0x0A); // G
     vram_put(0x04); // A
@@ -111,6 +111,20 @@ void draw_game_over(void) {
     vram_put(0x08); // E
     vram_put(0x15); // R
 	vram_put(0x28); // !
+	
+	vram_adr(NTADR_A(11, 16));
+
+	vram_put(0x13); // P
+	vram_put(0x15); // R
+	vram_put(0x08); // E
+	vram_put(0x16); // S
+	vram_put(0x16); // S
+	vram_put(0x00); // Space
+	vram_put(0x16); // S
+	vram_put(0x17); // T
+	vram_put(0x04); // A
+	vram_put(0x15); // R
+	vram_put(0x17); // T
 
     ppu_on_all();  // turn screen back on
 }
@@ -174,7 +188,7 @@ void main (void) {
 		pad1 = pad_poll(0); // read the first controller
 		
 		if (!player_alive) {
-    draw_game_over();  // show GAME OVER once
+    	draw_game_over();  // show GAME OVER once
 
     while (1) {
         ppu_wait_nmi();
