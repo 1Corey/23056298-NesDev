@@ -35,4 +35,8 @@ const unsigned char Enemy[]={
 	0x80
 };
 
+const unsigned char ExplosionSprite[] = {
+  0, 0, 0x2A, 0,
+  128
+};
 

@@ -51,6 +51,12 @@ struct EnemyMissile {
 
 struct EnemyMissile enemyMissiles[MAX_ENEMY_MISSILES];
 
+unsigned char effect_x = 0;
+unsigned char effect_y = 0;
+unsigned char effect_timer = 0;
+
+unsigned char player_alive = 1;
+
 // Fire missile from the enemy
 void fire_enemy_missile(unsigned char enemy_index) {
     unsigned char i;
@@ -63,6 +69,67 @@ void fire_enemy_missile(unsigned char enemy_index) {
         }
     }
 }
+
+void reset_game(void) {
+	unsigned char i;
+
+    // Reset player
+    BoxGuy1.X = 110;
+    BoxGuy1.Y = 200;
+    missile_y = YOFFSCREEN;
+    missile_active = 0;
+    player_alive = 1;
+
+    for (i = 0; i < MAX_ENEMIES; ++i) {
+        enemies[i].x = 40 + (i * 30);
+        enemies[i].y = 40;
+        enemies[i].active = 1;
+    }
+
+    // Reset enemy missiles
+    for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+        enemyMissiles[i].active = 0;
+    }
+
+    // Redraw background
+    draw_bg();
+}
+
+void draw_game_over(void) {
+    ppu_off();  // turn screen off for safe drawing
+
+    // Set VRAM address to write to (middle of screen: x=11, y=14)
+    vram_adr(NTADR_A(12, 14));
+
+    vram_put(0x0A); // G
+    vram_put(0x04); // A
+    vram_put(0x10); // M
+    vram_put(0x08); // E
+    vram_put(0x00); // Space
+    vram_put(0x12); // O
+    vram_put(0x19); // V
+    vram_put(0x08); // E
+    vram_put(0x15); // R
+	vram_put(0x28); // !
+	
+	vram_adr(NTADR_A(11, 16));
+
+	vram_put(0x13); // P
+	vram_put(0x15); // R
+	vram_put(0x08); // E
+	vram_put(0x16); // S
+	vram_put(0x16); // S
+	vram_put(0x00); // Space
+	vram_put(0x16); // S
+	vram_put(0x17); // T
+	vram_put(0x04); // A
+	vram_put(0x15); // R
+	vram_put(0x17); // T
+
+    ppu_on_all();  // turn screen back on
+}
+
+
 
 void main (void) {
 	rand();	//rand initialised
@@ -119,6 +186,25 @@ void main (void) {
 
 
 		pad1 = pad_poll(0); // read the first controller
+		
+		if (!player_alive) {
+    	draw_game_over();  // show GAME OVER once
+
+    while (1) {
+        ppu_wait_nmi();
+
+        pad1 = pad_poll(0);
+        pad1_new = get_pad_new(0);
+
+        if (pad1_new & PAD_START) {
+            reset_game();
+            break;
+        }
+    }
+
+    continue; // skip rest of the frame
+}
+
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 		
 		if ((pad1 & PAD_A) && missile_y == YOFFSCREEN) {
@@ -161,6 +247,41 @@ void main (void) {
     	missile_y += MISSILE_SPEED;  // move up
     	if (missile_y < 8) missile_y = YOFFSCREEN;  // if off screen, deactivate
 	}
+
+	for (i = 0; i < MAX_ENEMIES; ++i) {
+        if (enemies[i].active &&
+            missile_y != YOFFSCREEN &&
+            missile_x + 8 > enemies[i].x &&
+            missile_x < enemies[i].x + 16 &&
+            missile_y + 8 > enemies[i].y &&
+            missile_y < enemies[i].y + 16) {
+
+            enemies[i].active = 0;
+            missile_y = YOFFSCREEN;
+            effect_x = enemies[i].x;
+            effect_y = enemies[i].y;
+            effect_timer = 30;
+        }
+    }
+
+	if (effect_timer > 0) {
+        --effect_timer;
+    }
+
+	if (player_alive) {
+    for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+        if (enemyMissiles[i].active &&
+            BoxGuy1.X + 12 > enemyMissiles[i].x &&
+            BoxGuy1.X < enemyMissiles[i].x + 8 &&
+            BoxGuy1.Y + 12 > enemyMissiles[i].y &&
+            BoxGuy1.Y < enemyMissiles[i].y + 8) {
+
+            player_alive = 0;  // Player is "dead"
+            enemyMissiles[i].active = 0;  // Remove the missile
+        }
+    }
+}
+
 		draw_sprites();
 		check_start();
 	}
@@ -240,6 +361,19 @@ void draw_sprites(void){
             oam_meta_spr(enemyMissiles[i].x, enemyMissiles[i].y, EnemyMissile);
         }
     }
+
+	if (effect_timer > 0) {
+    	oam_meta_spr(effect_x, effect_y, ExplosionSprite);
+	}
+
+	if (player_alive) {
+    	oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
+	}
+
+	if (player_alive) {
+    	oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
+	}
+
 }
 
 
