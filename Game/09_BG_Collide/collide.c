@@ -98,6 +98,7 @@ void reset_game(void) {
 }
 
 void draw_game_over(void) {
+	if (game_over_displayed) return;
     ppu_off();  // turn screen off for safe drawing
 
     // Set VRAM address to write to (middle of screen: x=11, y=14)
@@ -129,6 +130,7 @@ void draw_game_over(void) {
 	vram_put(0x17); // T
 
     ppu_on_all();  // turn screen back on
+	game_over_displayed = 1;
 }
 
 

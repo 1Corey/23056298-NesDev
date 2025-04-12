@@ -2622,9 +2622,18 @@ L0008:	jsr     _draw_bg
 .segment	"CODE"
 
 ;
+; if (game_over_displayed) return;
+;
+	lda     _game_over_displayed
+	beq     L0003
+;
+; }
+;
+	rts
+;
 ; ppu_off();  // turn screen off for safe drawing
 ;
-	jsr     _ppu_off
+L0003:	jsr     _ppu_off
 ;
 ; vram_adr(NTADR_A(12, 14));
 ;
@@ -2745,7 +2754,16 @@ L0008:	jsr     _draw_bg
 ;
 ; ppu_on_all();  // turn screen back on
 ;
-	jmp     _ppu_on_all
+	jsr     _ppu_on_all
+;
+; game_over_displayed = 1;
+;
+	lda     #$01
+	sta     _game_over_displayed
+;
+; }
+;
+	rts
 
 .endproc
 
