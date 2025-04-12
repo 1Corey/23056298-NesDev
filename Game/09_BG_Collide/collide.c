@@ -11,21 +11,24 @@
 #include "Sprites.h" // holds our metasprite data
 #include "collide.h"
 #include "background.h"
+#include <stdlib.h>
 
+unsigned char frame_count = 0;
 unsigned char enemy_direction = 1; // 1 = right, 0 = left
 
 #define YOFFSCREEN 240	// offscreen y position
 #define MISSILE_SPEED -4
+#define MAX_ENEMIES 5
+#define MAX_ENEMY_MISSILES 4
 
 unsigned char missile_x;
 unsigned char missile_y;
 char missile_active = 0;
 
-#define MAX_ENEMIES 5
-
 typedef struct {
     unsigned char x, y;
     unsigned char active;
+	unsigned char direction;
 } FormationEnemy;
 
 FormationEnemy enemies[MAX_ENEMIES];
@@ -36,11 +39,34 @@ void spawn_enemy_wave() {
         enemies[i].x = 40 + (i * 30); // spread out horizontally
         enemies[i].y = 40; // all at the same height
         enemies[i].active = 1;
+        enemies[i].direction = 1; // initially move right
+    }
+}
+
+struct EnemyMissile {
+    unsigned char x;
+    unsigned char y;
+    unsigned char active;
+};
+
+struct EnemyMissile enemyMissiles[MAX_ENEMY_MISSILES];
+
+// Fire missile from the enemy
+void fire_enemy_missile(unsigned char enemy_index) {
+    unsigned char i;
+    for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+        if (!enemyMissiles[i].active) {
+            enemyMissiles[i].x = enemies[enemy_index].x;
+            enemyMissiles[i].y = enemies[enemy_index].y + 8; // missile starts just below enemy
+            enemyMissiles[i].active = 1;
+            return;
+        }
     }
 }
 
 void main (void) {
-	
+	rand();	//rand initialised
+  
 	ppu_off(); // screen off
 	
 	// load the palettes
@@ -65,12 +91,33 @@ void main (void) {
 	// ppu_on_all(); //already done in draw_bg()
 	
 	while (1){
-
 		unsigned char i;
 		// infinite loop
 		ppu_wait_nmi(); // wait till beginning of the frame
 		// the sprites are pushed from a buffer to the OAM during nmi
 		
+		frame_count++;  // you can add this global to track time
+
+	// Move all enemies and make them fire missiles randomly
+        for (i = 0; i < MAX_ENEMIES; ++i) {
+            if (enemies[i].active) {
+                // Move enemies
+                if (enemies[i].direction) {
+                    enemies[i].x++; // Move right
+                    if (enemies[i].x >= 240) enemies[i].direction = 0; // Change direction to left
+                } else {
+                    enemies[i].x--; // Move left
+                    if (enemies[i].x <= 32) enemies[i].direction = 1; // Change direction to right
+                }
+
+                // Fire missiles randomly (e.g., every 60 frames, 20% chance to fire)
+                if (frame_count % 60 == 0 && rand() % 10 < 2) {
+                    fire_enemy_missile(i);
+                }
+            }
+        }
+
+
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 		
@@ -97,6 +144,17 @@ void main (void) {
 		else if (enemies[i].x <= 32) {
 			enemy_direction = 1;
 		}
+
+	// Move enemy missiles
+	for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+    	if (enemyMissiles[i].active) {
+        	enemyMissiles[i].y += 2;
+
+        	if (enemyMissiles[i].y > 240) {
+            	enemyMissiles[i].active = 0; // turn off if offscreen
+        	}
+    	}
+	}
 
 	}
 		if (missile_y != YOFFSCREEN) {
@@ -157,21 +215,33 @@ void draw_bg(void){
 
 
 void draw_sprites(void){
-	unsigned char i;
-	oam_clear();
+    unsigned char i;
 
-	oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
+    oam_clear(); // clear sprite memory each frame
 
-	if (missile_y != YOFFSCREEN) {
-    oam_meta_spr(missile_x, missile_y, Missile);
-	}
+    // Draw the player
+    oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
 
-	for (i = 0; i < MAX_ENEMIES; ++i) {
-    if (enemies[i].active) {
-        oam_meta_spr(enemies[i].x, enemies[i].y, Enemy);
+    // Draw the player missile
+    if (missile_y != YOFFSCREEN) {
+        oam_meta_spr(missile_x, missile_y, Missile);
+    }
+
+    // Draw enemies
+    for (i = 0; i < MAX_ENEMIES; ++i) {
+        if (enemies[i].active) {
+            oam_meta_spr(enemies[i].x, enemies[i].y, Enemy);
+        }
+    }
+
+    // Draw enemy missiles
+    for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
+        if (enemyMissiles[i].active) {
+            oam_meta_spr(enemyMissiles[i].x, enemyMissiles[i].y, EnemyMissile);
+        }
     }
 }
-}
+
 
 
 	
