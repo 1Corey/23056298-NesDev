@@ -54,6 +54,7 @@
 	.export		_All_Collision_Maps
 	.export		_palette_bg
 	.export		_palette_sp
+	.export		_palette_explosion
 	.export		_draw_bg
 	.export		_draw_sprites
 	.export		_movement
@@ -169,9 +170,21 @@ _Enemy:
 	.byte	$c0
 	.byte	$80
 _ExplosionSprite:
+	.byte	$f8
+	.byte	$f8
+	.byte	$0c
 	.byte	$00
 	.byte	$00
-	.byte	$2a
+	.byte	$f8
+	.byte	$0d
+	.byte	$00
+	.byte	$f8
+	.byte	$00
+	.byte	$1c
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$1d
 	.byte	$00
 	.byte	$80
 _c2:
@@ -443,6 +456,23 @@ _palette_sp:
 	.byte	$0f
 	.byte	$0f
 	.byte	$12
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+_palette_explosion:
+	.byte	$0f
+	.byte	$06
+	.byte	$30
+	.byte	$3f
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$00
 	.byte	$00
 	.byte	$00
@@ -1742,7 +1772,7 @@ L0003:	jmp     _ppu_on_all
 ;
 	lda     _missile_y
 	cmp     #$F0
-	beq     L0012
+	beq     L0015
 ;
 ; oam_meta_spr(missile_x, missile_y, Missile);
 ;
@@ -1759,11 +1789,11 @@ L0003:	jmp     _ppu_on_all
 ;
 ; for (i = 0; i < MAX_ENEMIES; ++i) {
 ;
-L0012:	lda     #$00
+L0015:	lda     #$00
 	tay
-L0010:	sta     (sp),y
+L0013:	sta     (sp),y
 	cmp     #$05
-	bcs     L0013
+	bcs     L0016
 ;
 ; if (enemies[i].active) {
 ;
@@ -1819,14 +1849,14 @@ L0005:	ldy     #$00
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0010
+	jmp     L0013
 ;
 ; for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
 ;
-L0013:	tya
-L0011:	sta     (sp),y
+L0016:	tya
+L0014:	sta     (sp),y
 	cmp     #$04
-	bcs     L0014
+	bcs     L0017
 ;
 ; if (enemyMissiles[i].active) {
 ;
@@ -1882,11 +1912,11 @@ L000A:	ldy     #$00
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0011
+	jmp     L0014
 ;
 ; if (effect_timer > 0) {
 ;
-L0014:	lda     _effect_timer
+L0017:	lda     _effect_timer
 	beq     L000D
 ;
 ; oam_meta_spr(effect_x, effect_y, ExplosionSprite);
@@ -1920,22 +1950,24 @@ L000D:	lda     _player_alive
 	ldx     #>(_YellowSpr)
 	jsr     _oam_meta_spr
 ;
-; if (player_alive) {
+; if (!player_alive && effect_timer > 0) {
 ;
 L000E:	lda     _player_alive
+	bne     L000F
+	lda     _effect_timer
 	beq     L000F
 ;
-; oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
+; oam_meta_spr(effect_x, effect_y, ExplosionSprite);  // Draw explosion at player's position
 ;
 	jsr     decsp2
-	lda     _BoxGuy1
+	lda     _effect_x
 	ldy     #$01
 	sta     (sp),y
-	lda     _BoxGuy1+1
+	lda     _effect_y
 	dey
 	sta     (sp),y
-	lda     #<(_YellowSpr)
-	ldx     #>(_YellowSpr)
+	lda     #<(_ExplosionSprite)
+	ldx     #>(_ExplosionSprite)
 	jsr     _oam_meta_spr
 ;
 ; }
@@ -3412,7 +3444,7 @@ L003A:	jsr     tosicmp
 	lda     (ptr1),y
 	sta     _effect_y
 ;
-; effect_timer = 30;
+; effect_timer = 30; // Enemy explosion timer
 ;
 	lda     #$1E
 	sta     _effect_timer
@@ -3505,7 +3537,7 @@ L0045:	jsr     pushax
 	bcc     L0046
 	inx
 L0046:	jsr     tosicmp
-	bpl     L0041
+	jpl     L0041
 ;
 ; BoxGuy1.Y + 12 > enemyMissiles[i].y &&
 ;
@@ -3574,6 +3606,21 @@ L0048:	jsr     tosicmp
 	lda     #$00
 	ldy     #$02
 	sta     (ptr1),y
+;
+; effect_x = BoxGuy1.X;  // Explosion at player position
+;
+	lda     _BoxGuy1
+	sta     _effect_x
+;
+; effect_y = BoxGuy1.Y;  // Explosion at player position
+;
+	lda     _BoxGuy1+1
+	sta     _effect_y
+;
+; effect_timer = 5;  // Player explosion timer
+;
+	lda     #$05
+	sta     _effect_timer
 ;
 ; for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
 ;

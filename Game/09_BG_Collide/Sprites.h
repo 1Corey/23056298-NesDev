@@ -35,8 +35,12 @@ const unsigned char Enemy[]={
 	0x80
 };
 
-const unsigned char ExplosionSprite[] = {
-  0, 0, 0x2A, 0,
-  128
+const unsigned char ExplosionSprite[]={
+	- 8,- 8,0x0c,0,
+	  0,- 8,0x0d,0,
+	- 8,  0,0x1c,0,
+	  0,  0,0x1d,0,
+	0x80
 };
+
 

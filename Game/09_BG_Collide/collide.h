@@ -69,6 +69,13 @@ const unsigned char palette_sp[]={
 }; 
 
 
+const unsigned char palette_explosion[]={
+0x0f, 0x06, 0x30, 0x3F, 
+0,0,0,0,
+0,0,0,0,
+0,0,0,0
+}; 
+
 
 // PROTOTYPES
 void draw_bg(void);

@@ -163,7 +163,7 @@ void main (void) {
 		ppu_wait_nmi(); // wait till beginning of the frame
 		// the sprites are pushed from a buffer to the OAM during nmi
 		
-		frame_count++;  // you can add this global to track time
+		frame_count++;
 
 	// Move all enemies and make them fire missiles randomly
         for (i = 0; i < MAX_ENEMIES; ++i) {
@@ -197,7 +197,7 @@ void main (void) {
         pad1_new = get_pad_new(0);
 
         if (pad1_new & PAD_START) {
-            reset_game();
+            reset_game();	// Reset game after W pressed
             break;
         }
     }
@@ -245,7 +245,7 @@ void main (void) {
 	}
 		if (missile_y != YOFFSCREEN) {
     	missile_y += MISSILE_SPEED;  // move up
-    	if (missile_y < 8) missile_y = YOFFSCREEN;  // if off screen, deactivate
+    	if (missile_y < 8) missile_y = YOFFSCREEN;  // if off screen, delete missile
 	}
 
 	for (i = 0; i < MAX_ENEMIES; ++i) {
@@ -260,7 +260,7 @@ void main (void) {
             missile_y = YOFFSCREEN;
             effect_x = enemies[i].x;
             effect_y = enemies[i].y;
-            effect_timer = 30;
+            effect_timer = 30;	// Enemy explosion timer
         }
     }
 
@@ -276,8 +276,11 @@ void main (void) {
             BoxGuy1.Y + 12 > enemyMissiles[i].y &&
             BoxGuy1.Y < enemyMissiles[i].y + 8) {
 
-            player_alive = 0;  // Player is "dead"
+            player_alive = 0;  // Player is dead
             enemyMissiles[i].active = 0;  // Remove the missile
+			effect_x = BoxGuy1.X;  // Explosion at player position
+            effect_y = BoxGuy1.Y;  // Explosion at player position
+            effect_timer = 5;  // Player explosion timer
         }
     }
 }
@@ -370,14 +373,12 @@ void draw_sprites(void){
     	oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
 	}
 
-	if (player_alive) {
-    	oam_meta_spr(BoxGuy1.X, BoxGuy1.Y, YellowSpr);
+	if (!player_alive && effect_timer > 0) {
+    	oam_meta_spr(effect_x, effect_y, ExplosionSprite);  // Draw explosion at player's position
 	}
 
+
 }
-
-
-
 	
 	
 void movement(void){
