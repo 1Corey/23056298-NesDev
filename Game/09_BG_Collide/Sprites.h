@@ -28,12 +28,13 @@ const unsigned char EnemyMissile[]={
 };
 
 const unsigned char Enemy[]={
-	- 8,- 8,0x01,0,
-	  0,- 8,0x01,0|OAM_FLIP_H,
-	- 8,  0,0x01,0|OAM_FLIP_V,
-	  0,  0,0x01,0|OAM_FLIP_H|OAM_FLIP_V,
+	- 8,- 8,0x04,0,
+	  0,- 8,0x05,0,
+	- 8,  0,0x06,0,
+	  0,  0,0x07,0,
 	0x80
 };
+
 
 const unsigned char ExplosionSprite[]={
 	- 8,- 8,0x0c,0,

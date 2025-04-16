@@ -157,20 +157,20 @@ _EnemyMissile:
 _Enemy:
 	.byte	$f8
 	.byte	$f8
-	.byte	$01
+	.byte	$04
 	.byte	$00
 	.byte	$00
 	.byte	$f8
-	.byte	$01
-	.byte	$40
+	.byte	$05
+	.byte	$00
 	.byte	$f8
 	.byte	$00
-	.byte	$01
-	.byte	$80
+	.byte	$06
 	.byte	$00
 	.byte	$00
-	.byte	$01
-	.byte	$c0
+	.byte	$00
+	.byte	$07
+	.byte	$00
 	.byte	$80
 _ExplosionSprite:
 	.byte	$f8
