@@ -54,7 +54,7 @@
 	.export		_All_Collision_Maps
 	.export		_palette_bg
 	.export		_palette_sp
-	.export		_palette_explosion
+	.export		_explosion_palette
 	.export		_draw_bg
 	.export		_draw_sprites
 	.export		_movement
@@ -67,6 +67,9 @@
 	.export		_missile_x
 	.export		_missile_y
 	.export		_missile_active
+	.export		_wave
+	.export		_enemies_remaining
+	.export		_next_wave_ready
 	.export		_enemies
 	.export		_spawn_enemy_wave
 	.export		_enemyMissiles
@@ -92,6 +95,12 @@ _frame_count:
 _enemy_direction:
 	.byte	$01
 _missile_active:
+	.byte	$00
+_wave:
+	.byte	$01
+_enemies_remaining:
+	.byte	$00
+_next_wave_ready:
 	.byte	$00
 _effect_x:
 	.byte	$00
@@ -467,23 +476,23 @@ _palette_sp:
 	.byte	$00
 	.byte	$00
 	.byte	$00
-_palette_explosion:
+_explosion_palette:
 	.byte	$0f
-	.byte	$06
-	.byte	$30
+	.byte	$0f
+	.byte	$1f
+	.byte	$17
 	.byte	$3f
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
+	.byte	$2f
+	.byte	$1f
+	.byte	$10
+	.byte	$12
+	.byte	$0a
+	.byte	$19
+	.byte	$13
+	.byte	$18
+	.byte	$0f
+	.byte	$0f
+	.byte	$0f
 _background:
 	.byte	$00
 	.byte	$00
@@ -2231,36 +2240,89 @@ L000A:	rts
 .segment	"CODE"
 
 ;
-; unsigned char index = 0;
+; unsigned char row, col, index = 0;
 ;
 	jsr     decsp2
 	lda     #$00
 	jsr     pusha
 ;
+; unsigned char enemies_to_spawn = wave;
+;
+	lda     _wave
+	jsr     pusha
+;
+; if (enemies_to_spawn > ENEMY_ROWS * ENEMY_COLS) enemies_to_spawn = ENEMY_ROWS * ENEMY_COLS;
+;
+	ldy     #$00
+	lda     (sp),y
+	cmp     #$0B
+	tya
+	bcc     L0016
+	lda     #$0A
+	sta     (sp),y
+;
+; for (index = 0; index < MAX_ENEMIES; ++index) {
+;
+	tya
+L0016:	iny
+L0012:	sta     (sp),y
+	cmp     #$0A
+	bcs     L0017
+;
+; enemies[index].active = 0;
+;
+	ldx     #$00
+	lda     (sp),y
+	jsr     aslax2
+	clc
+	adc     #<(_enemies)
+	sta     ptr1
+	txa
+	adc     #>(_enemies)
+	sta     ptr1+1
+	lda     #$00
+	ldy     #$03
+	sta     (ptr1),y
+;
+; for (index = 0; index < MAX_ENEMIES; ++index) {
+;
+	ldy     #$01
+	clc
+	tya
+	adc     (sp),y
+	jmp     L0012
+;
+; index = 0;
+;
+L0017:	lda     #$00
+	sta     (sp),y
+;
 ; for (row = 0; row < ENEMY_ROWS; ++row) {
 ;
-	ldy     #$02
-L000E:	sta     (sp),y
+	ldy     #$03
+L0014:	sta     (sp),y
 	cmp     #$02
-	jcs     L0003
+	jcs     L0008
 ;
 ; for (col = 0; col < ENEMY_COLS; ++col) {
 ;
 	lda     #$00
 	dey
-L000D:	sta     (sp),y
+L0013:	sta     (sp),y
 	cmp     #$05
-	jcs     L0004
+	jcs     L0009
 ;
-; if (index >= MAX_ENEMIES) break;
+; if (index >= enemies_to_spawn) return;
 ;
 	dey
 	lda     (sp),y
-	cmp     #$0A
-	jcs     L0004
+	dey
+	cmp     (sp),y
+	jcs     L0008
 ;
-; enemies[index].x = 40 + col * 32;   // horizontal spacing
+; enemies[index].x = 40 + col * 32;
 ;
+	iny
 	ldx     #$00
 	lda     (sp),y
 	jsr     aslax2
@@ -2279,11 +2341,12 @@ L000D:	sta     (sp),y
 	asl     a
 	clc
 	adc     #$28
-	dey
+	ldy     #$00
 	sta     (ptr1),y
 ;
-; enemies[index].y = 40 + row * 30;   // vertical spacing
+; enemies[index].y = 40 + row * 30;
 ;
+	iny
 	ldx     #$00
 	lda     (sp),y
 	jsr     aslax2
@@ -2295,7 +2358,7 @@ L000D:	sta     (sp),y
 	tax
 	tya
 	jsr     pushax
-	ldy     #$04
+	ldy     #$05
 	lda     (sp),y
 	jsr     pusha0
 	lda     #$1E
@@ -2305,10 +2368,11 @@ L000D:	sta     (sp),y
 	ldy     #$01
 	jsr     staspidx
 ;
-; enemies[index].direction = 1;       // start moving right
+; enemies[index].direction = 1;
 ;
+	ldy     #$01
 	ldx     #$00
-	lda     (sp,x)
+	lda     (sp),y
 	jsr     aslax2
 	clc
 	adc     #<(_enemies)
@@ -2316,14 +2380,15 @@ L000D:	sta     (sp),y
 	txa
 	adc     #>(_enemies)
 	sta     ptr1+1
-	lda     #$01
-	ldy     #$02
+	tya
+	iny
 	sta     (ptr1),y
 ;
 ; enemies[index].active = 1;
 ;
+	dey
 	ldx     #$00
-	lda     (sp,x)
+	lda     (sp),y
 	jsr     aslax2
 	clc
 	adc     #<(_enemies)
@@ -2331,13 +2396,13 @@ L000D:	sta     (sp),y
 	txa
 	adc     #>(_enemies)
 	sta     ptr1+1
-	lda     #$01
-	iny
+	tya
+	ldy     #$03
 	sta     (ptr1),y
 ;
-; index++;
+; ++index;
 ;
-	ldy     #$00
+	tay
 	clc
 	adc     (sp),y
 	sta     (sp),y
@@ -2346,21 +2411,21 @@ L000D:	sta     (sp),y
 ;
 	iny
 	clc
-	tya
+	lda     #$01
 	adc     (sp),y
-	jmp     L000D
+	jmp     L0013
 ;
 ; for (row = 0; row < ENEMY_ROWS; ++row) {
 ;
-L0004:	ldy     #$02
+L0009:	iny
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L000E
+	jmp     L0014
 ;
 ; }
 ;
-L0003:	jmp     incsp3
+L0008:	jmp     incsp4
 
 .endproc
 
@@ -2870,9 +2935,9 @@ L0002:	jsr     decsp1
 ;
 	lda     #$00
 	tay
-L0042:	sta     (sp),y
+L004A:	sta     (sp),y
 	cmp     #$0A
-	jcs     L0048
+	jcs     L0051
 ;
 ; if (enemies[i].active) {
 ;
@@ -2940,7 +3005,7 @@ L0042:	sta     (sp),y
 	lda     (ptr1),y
 	cmp     #$F0
 	ldx     #$00
-	bcc     L0046
+	bcc     L004F
 	lda     (sp,x)
 	jsr     aslax2
 	clc
@@ -2953,7 +3018,7 @@ L0042:	sta     (sp),y
 ;
 ; } else {
 ;
-	jmp     L0053
+	jmp     L005E
 ;
 ; enemies[i].x--;
 ;
@@ -2991,7 +3056,7 @@ L000A:	tax
 	ldx     #$00
 	lda     (ptr1),y
 	cmp     #$21
-	bcs     L0046
+	bcs     L004F
 	lda     (sp,x)
 	jsr     aslax2
 	clc
@@ -3001,12 +3066,12 @@ L000A:	tax
 	adc     #>(_enemies)
 	sta     ptr1+1
 	lda     #$01
-L0053:	ldy     #$02
+L005E:	ldy     #$02
 	sta     (ptr1),y
 ;
 ; if (frame_count % 60 == 0 && rand() % 10 < 2) {
 ;
-L0046:	lda     _frame_count
+L004F:	lda     _frame_count
 	jsr     pusha0
 	lda     #$3C
 	jsr     tosumoda0
@@ -3038,11 +3103,11 @@ L0007:	ldy     #$00
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0042
+	jmp     L004A
 ;
 ; pad1 = pad_poll(0);
 ;
-L0048:	tya
+L0051:	tya
 	jsr     _pad_poll
 	sta     _pad1
 ;
@@ -3122,7 +3187,7 @@ L0019:	jsr     _movement
 ;
 	lda     _missile_y
 	cmp     #$F0
-	beq     L004C
+	beq     L0055
 ;
 ; missile_y += MISSILE_SPEED;
 ;
@@ -3134,17 +3199,17 @@ L0019:	jsr     _movement
 ; if (missile_y < 8) missile_y = YOFFSCREEN;
 ;
 	cmp     #$08
-	bcs     L004C
+	bcs     L0055
 	lda     #$F0
 	sta     _missile_y
 ;
 ; for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
 ;
-L004C:	lda     #$00
+L0055:	lda     #$00
 	tay
-L0043:	sta     (sp),y
+L004B:	sta     (sp),y
 	cmp     #$04
-	bcs     L004D
+	bcs     L0056
 ;
 ; if (enemyMissiles[i].active) {
 ;
@@ -3215,14 +3280,14 @@ L0023:	ldy     #$00
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0043
+	jmp     L004B
 ;
 ; for (i = 0; i < MAX_ENEMIES; ++i) {
 ;
-L004D:	tya
-L0044:	sta     (sp),y
+L0056:	tya
+L004C:	sta     (sp),y
 	cmp     #$0A
-	jcs     L0050
+	jcs     L0059
 ;
 ; if (enemies[i].active &&
 ;
@@ -3399,11 +3464,11 @@ L0029:	ldy     #$00
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0044
+	jmp     L004C
 ;
 ; if (effect_timer > 0) {
 ;
-L0050:	lda     _effect_timer
+L0059:	lda     _effect_timer
 	beq     L0033
 ;
 ; --effect_timer;
@@ -3418,7 +3483,7 @@ L0033:	lda     _player_alive
 ; for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
 ;
 	tya
-L0045:	sta     (sp),y
+L004D:	sta     (sp),y
 	cmp     #$04
 	jcs     L0036
 ;
@@ -3572,11 +3637,89 @@ L0037:	ldy     #$00
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0045
+	jmp     L004D
+;
+; if (!next_wave_ready) {
+;
+L0036:	lda     _next_wave_ready
+	bne     L005D
+;
+; unsigned char enemies_remaining = 0;
+;
+	jsr     pusha
+;
+; for (i = 0; i < MAX_ENEMIES; ++i) {
+;
+	ldy     #$01
+L004E:	sta     (sp),y
+	cmp     #$0A
+	bcs     L0043
+;
+; if (enemies[i].active) {
+;
+	ldx     #$00
+	lda     (sp),y
+	jsr     aslax2
+	clc
+	adc     #<(_enemies)
+	sta     ptr1
+	txa
+	adc     #>(_enemies)
+	sta     ptr1+1
+	ldy     #$03
+	lda     (ptr1),y
+	beq     L0044
+;
+; enemies_remaining = 1;
+;
+	lda     #$01
+	ldy     #$00
+	sta     (sp),y
+;
+; break;
+;
+	jmp     L005C
+;
+; for (i = 0; i < MAX_ENEMIES; ++i) {
+;
+L0044:	ldy     #$01
+	clc
+	tya
+	adc     (sp),y
+	jmp     L004E
+;
+; if (!enemies_remaining) {
+;
+L0043:	dey
+L005C:	lda     (sp),y
+	bne     L0047
+;
+; next_wave_ready = 1;
+;
+	lda     #$01
+	sta     _next_wave_ready
+;
+; } else {
+;
+L0047:	jsr     incsp1
+	jmp     L0048
+;
+; ++wave;
+;
+L005D:	inc     _wave
+;
+; spawn_enemy_wave();
+;
+	jsr     _spawn_enemy_wave
+;
+; next_wave_ready = 0;
+;
+	lda     #$00
+	sta     _next_wave_ready
 ;
 ; draw_sprites();
 ;
-L0036:	jsr     _draw_sprites
+L0048:	jsr     _draw_sprites
 ;
 ; check_start();
 ;

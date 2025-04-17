@@ -23,6 +23,9 @@ unsigned char enemy_direction = 1; // 1 = right, 0 = left
 unsigned char missile_x;
 unsigned char missile_y;
 char missile_active = 0;
+unsigned char wave = 1;
+unsigned char enemies_remaining = 0;
+unsigned char next_wave_ready = 0;
 
 #define ENEMY_ROWS 2
 #define ENEMY_COLS 5
@@ -39,21 +42,29 @@ struct Enemy enemies[MAX_ENEMIES];
 
 
 void spawn_enemy_wave(void) {
-    unsigned char row, col;
-    unsigned char index = 0;
+    unsigned char row, col, index = 0;
+    unsigned char enemies_to_spawn = wave;
+    if (enemies_to_spawn > ENEMY_ROWS * ENEMY_COLS) enemies_to_spawn = ENEMY_ROWS * ENEMY_COLS;
 
+    // Deactivate all enemies
+    for (index = 0; index < MAX_ENEMIES; ++index) {
+        enemies[index].active = 0;
+    }
+
+    index = 0;
     for (row = 0; row < ENEMY_ROWS; ++row) {
         for (col = 0; col < ENEMY_COLS; ++col) {
-            if (index >= MAX_ENEMIES) break;
+            if (index >= enemies_to_spawn) return;
 
-            enemies[index].x = 40 + col * 32;   // horizontal spacing
-            enemies[index].y = 40 + row * 30;   // vertical spacing
-            enemies[index].direction = 1;       // start moving right
+            enemies[index].x = 40 + col * 32;
+            enemies[index].y = 40 + row * 30;
+            enemies[index].direction = 1;
             enemies[index].active = 1;
-            index++;
+            ++index;
         }
     }
 }
+
 
 
 struct EnemyMissile {
@@ -273,6 +284,26 @@ void main (void) {
             }
         }
 
+        // Check if all enemies are defeated
+    if (!next_wave_ready) {
+    unsigned char enemies_remaining = 0;
+    for (i = 0; i < MAX_ENEMIES; ++i) {
+        if (enemies[i].active) {
+            enemies_remaining = 1;
+            break;
+        }
+    }
+
+    if (!enemies_remaining) {
+        next_wave_ready = 1;
+    }
+} else {
+    ++wave;
+    spawn_enemy_wave();
+    next_wave_ready = 0;
+}
+
+
         draw_sprites();
         check_start();
     }
@@ -355,14 +386,14 @@ void draw_sprites(void){
     }
 
 	if (effect_timer > 0) {
-    	oam_meta_spr(effect_x, effect_y, ExplosionSprite);
+    	//pal_spr(explosion_palette);
+        oam_meta_spr(effect_x, effect_y, ExplosionSprite);
 	}
 
 	if (!player_alive && effect_timer > 0) {
+        //pal_spr(explosion_palette);
     	oam_meta_spr(effect_x, effect_y, ExplosionSprite);  // Draw explosion at player's position
 	}
-
-
 }
 	
 	
