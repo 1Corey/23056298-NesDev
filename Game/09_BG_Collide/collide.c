@@ -26,6 +26,8 @@ char missile_active = 0;
 unsigned char wave = 1;
 unsigned char enemies_remaining = 0;
 unsigned char next_wave_ready = 0;
+unsigned int score = 0;
+unsigned char score_needs_update = 1;
 
 #define ENEMY_ROWS 2
 #define ENEMY_COLS 5
@@ -115,6 +117,9 @@ void reset_game(void) {
     for (i = 0; i < MAX_ENEMY_MISSILES; ++i) {
         enemyMissiles[i].active = 0;
     }
+    
+    score = 0;
+    score_needs_update = 1;
 
     // Redraw background
     draw_bg();
@@ -158,7 +163,46 @@ void draw_game_over(void) {
 	game_over_displayed = 1;
 }
 
+void draw_score_label() {
+    vram_adr(NTADR_A(2, 2));    // top left of the screen
 
+    vram_put(0x16); // S
+    vram_put(0x06);  // C
+    vram_put(0x12); // O
+    vram_put(0x15); // R
+    vram_put(0x08);  // E
+    vram_put(0); // Space
+}
+
+void convert_score_to_digits(unsigned int value, unsigned char *digits, unsigned char num_digits) {
+    unsigned char i;
+    
+    // Extract each digit
+    for (i = 0; i < num_digits; ++i) {
+        digits[num_digits - 1 - i] = value % 10;
+        value /= 10;
+    }
+}
+
+// Update score display on screen (i had issues with screen flickering so had to do it this way)
+void update_score_display(void) {
+    unsigned char score_digits[5];
+    unsigned char i;
+    
+    // Convert score to digits
+    convert_score_to_digits(score, score_digits, 5);
+    
+    ppu_off();
+    
+    vram_adr(NTADR_A(8, 2));
+    
+    // Use 0x1E as the base index for digit '0'
+    for (i = 0; i < 5; ++i) {
+        vram_put(0x1E + score_digits[i]); // 0x1E + digit value
+    }
+
+    ppu_on_all();
+}
 
 void main (void) {
     rand(); // rand initialized
@@ -181,6 +225,12 @@ void main (void) {
     while (1) {
         unsigned char i;
         ppu_wait_nmi(); // wait till beginning of the frame
+
+        if (score_needs_update) {
+            update_score_display();
+            score_needs_update = 0;
+        }
+        
         frame_count++;
 
         // Move all enemies and make them fire missiles randomly
@@ -260,6 +310,9 @@ void main (void) {
                 effect_x = enemies[i].x;
                 effect_y = enemies[i].y;
                 effect_timer = 30;
+                score += 50;
+                score_needs_update = 1;
+                update_score_display();
             }
         }
 
@@ -285,25 +338,23 @@ void main (void) {
         }
 
         // Check if all enemies are defeated
-    if (!next_wave_ready) {
-    unsigned char enemies_remaining = 0;
-    for (i = 0; i < MAX_ENEMIES; ++i) {
-        if (enemies[i].active) {
-            enemies_remaining = 1;
-            break;
+        if (!next_wave_ready) {
+            unsigned char enemies_remaining = 0;
+            for (i = 0; i < MAX_ENEMIES; ++i) {
+                if (enemies[i].active) {
+                enemies_remaining = 1;
+                break;
+            }
         }
-    }
-
-    if (!enemies_remaining) {
-        next_wave_ready = 1;
-    }
-} else {
-    ++wave;
-    spawn_enemy_wave();
-    next_wave_ready = 0;
-}
-
-
+            if (!enemies_remaining) {
+                next_wave_ready = 1;
+            }
+        } 
+        else {
+        ++wave;
+        spawn_enemy_wave();
+        next_wave_ready = 0;
+        }
         draw_sprites();
         check_start();
     }
@@ -321,7 +372,7 @@ void draw_bg(void){
 	
 	// this sets a start position on the BG, top left of screen
 	vram_adr(NAMETABLE_A);
-	
+
 	vram_write(background, 1024);
 	// draw a row of tiles
 	for(temp_y = 0; temp_y < 15; ++temp_y){
@@ -352,7 +403,8 @@ void draw_bg(void){
 			}
 		}
 	}
-	
+	draw_score_label();
+    update_score_display();
 	ppu_on_all(); // turn on screen
 }
 
