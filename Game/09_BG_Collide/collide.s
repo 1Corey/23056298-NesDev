@@ -3073,7 +3073,7 @@ L000A:	sta     (sp),y
 	cmp     #$05
 	bcs     L0004
 ;
-; vram_put(0x1E + score_digits[i]); // 0x1E + digit value
+; vram_put(0x1E + score_digits[i]);   // 0 bank address + score digit
 ;
 	lda     sp
 	ldx     sp+1
@@ -3732,7 +3732,7 @@ L0031:	jsr     tosicmp
 ;
 L0034:	sty     _score_needs_update
 ;
-; update_score_display();
+; update_score_display(); // when enemy gets destroyed update score
 ;
 	jsr     _update_score_display
 ;

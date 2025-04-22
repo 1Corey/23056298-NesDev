@@ -8,7 +8,7 @@
 
 #include "LIB/neslib.h"
 #include "LIB/nesdoug.h"
-#include "Sprites.h" // holds our metasprite data
+#include "Sprites.h"
 #include "collide.h"
 #include "background.h"
 #include <stdlib.h>
@@ -42,7 +42,6 @@ struct Enemy {
 
 struct Enemy enemies[MAX_ENEMIES];
 
-
 void spawn_enemy_wave(void) {
     unsigned char row, col, index = 0;
     unsigned char enemies_to_spawn = wave;
@@ -66,8 +65,6 @@ void spawn_enemy_wave(void) {
         }
     }
 }
-
-
 
 struct EnemyMissile {
     unsigned char x;
@@ -131,7 +128,7 @@ void draw_game_over(void) {
 	if (game_over_displayed) return;
     ppu_off();  // turn screen off for safe drawing
 
-    // Set VRAM address to write to (middle of screen: x=11, y=14)
+    // middle of the screen
     vram_adr(NTADR_A(12, 14));
 
     vram_put(0x0A); // G
@@ -196,9 +193,8 @@ void update_score_display(void) {
     
     vram_adr(NTADR_A(8, 2));
     
-    // Use 0x1E as the base index for digit '0'
     for (i = 0; i < 5; ++i) {
-        vram_put(0x1E + score_digits[i]); // 0x1E + digit value
+        vram_put(0x1E + score_digits[i]);   // 0 bank address + score digit
     }
 
     ppu_on_all();
@@ -312,7 +308,7 @@ void main (void) {
                 effect_timer = 30;
                 score += 50;
                 score_needs_update = 1;
-                update_score_display();
+                update_score_display(); // when enemy gets destroyed update score
             }
         }
 
@@ -360,9 +356,6 @@ void main (void) {
     }
 }
 
-
-
-
 void draw_bg(void){
 	ppu_off(); // screen off
 	
@@ -403,12 +396,11 @@ void draw_bg(void){
 			}
 		}
 	}
+
 	draw_score_label();
     update_score_display();
 	ppu_on_all(); // turn on screen
 }
-
-
 
 void draw_sprites(void){
     unsigned char i;
@@ -438,17 +430,16 @@ void draw_sprites(void){
     }
 
 	if (effect_timer > 0) {
-    	//pal_spr(explosion_palette);
+    	//pal_spr(explosion_palette); cannot get the palette working with this sadly
         oam_meta_spr(effect_x, effect_y, ExplosionSprite);
 	}
 
 	if (!player_alive && effect_timer > 0) {
-        //pal_spr(explosion_palette);
+        //pal_spr(explosion_palette); cannot get the palette working with this sadly
     	oam_meta_spr(effect_x, effect_y, ExplosionSprite);  // Draw explosion at player's position
 	}
 }
-	
-	
+
 void movement(void){
     // Only handle left and right movement
     if(pad1 & PAD_LEFT){
@@ -463,9 +454,6 @@ void movement(void){
     if(collision_R) BoxGuy1.X -= 1;  // If collision on the right, move left
     if(collision_L) BoxGuy1.X += 1;  // If collision on the left, move right
 }
-
-
-
 
 void bg_collision(){
 	// sprite collision with backgrounds
@@ -513,9 +501,6 @@ void bg_collision(){
 		++collision_D;
 	}
 }
-
-
-
 
 void check_start(void){
 	// if START is pressed, load another background
