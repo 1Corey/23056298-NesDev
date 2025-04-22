@@ -3402,6 +3402,21 @@ L0016:	jsr     _ppu_wait_nmi
 	and     #$10
 	beq     L0016
 ;
+; score = 0;
+;
+	lda     #$00
+	sta     _score
+	sta     _score+1
+;
+; score_needs_update = 1;
+;
+	lda     #$01
+	sta     _score_needs_update
+;
+; wave = 1;
+;
+	sta     _wave
+;
 ; reset_game();
 ;
 	jsr     _reset_game

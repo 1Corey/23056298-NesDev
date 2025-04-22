@@ -174,7 +174,6 @@ void draw_score_label() {
 void convert_score_to_digits(unsigned int value, unsigned char *digits, unsigned char num_digits) {
     unsigned char i;
     
-    // Extract each digit
     for (i = 0; i < num_digits; ++i) {
         digits[num_digits - 1 - i] = value % 10;
         value /= 10;
@@ -259,6 +258,9 @@ void main (void) {
                 pad1_new = get_pad_new(0);
 
                 if (pad1_new & PAD_START) {
+                    score = 0;
+                    score_needs_update = 1;
+                    wave = 1;
                     reset_game();
                     break;
                 }
